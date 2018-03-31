@@ -888,3 +888,6 @@ document.addEventListener("turbolinks:load", function() {
 ```
 git add .
 git commit -m "add image Drag"
+git push origin shot-view
+```
+![image](https://i.loli.net/2018/03/31/5abf284fc8cc0.png)
