@@ -33,6 +33,7 @@ gem 'guard-livereload', '~> 2.5', '>= 2.5.2', require: false
 1、heroku 的部署
 2、aliyun 的部署
 ```
+https://teratail.com
 
 ```
 cd workspace
@@ -594,3 +595,702 @@ rails c
 2.3.1 :011 > exit
 ```
 ![image](https://i.loli.net/2018/03/31/5abf12df61f05.png)
+
+```
+git checkout -b shot-view
+app/views/shots/new.html.erb
+---
+<h1>New Shot</h1>
+
+<%= render 'form', shot: @shot %>
+
+<%= link_to 'Back', shots_path %>
+---
+<section class="section">
+	<div class="container">
+		<h1 class="title is-2 has-text-centered">What are you working on?</h1>
+		<%= render 'form', shot: @shot %>
+	</div>
+</section>
+---
+app/views/shots/_form.html.erb
+---
+
+<%= simple_form_for(@shot) do |f| %>
+  <%= f.error_notification %>
+
+  <div class="form-inputs">
+    <%= f.input :title %>
+    <%= f.input :description %>
+  </div>
+
+  <div class="form-actions">
+    <%= f.button :submit %>
+  </div>
+<% end %>
+---
+<%= simple_form_for @shot, html: { multipart: true }  do |f| %>
+  <%= f.error_notification %>
+  <div class="columns is-centered">
+    <div class="column is-half">
+
+    <%#unless @shot.user_shot.blank? %>
+    <%#= image_tag (@shot.user_shot_url), id: "previewImage" %>
+    <%# end %>
+
+    <output id="list"></output>
+    <div id="drop_zone">Drag your shot here</div>
+    <br />
+
+    <%#= f.input :user_shot, label: false, input_html: { class: "file-input", type: "file" }, wrapper: false, label_html: { class: "file-label" } %>
+
+    <div class="field">
+      <div class="control">
+      	<%= f.input :title, label: "Title", input_html: { class: "input"}, wrapper: false, label_html: { class: "label" } %>
+      </div>
+    </div>
+
+    <div class="field">
+    	<div class="control">
+      	<%= f.input :description, input_html: { class: "textarea"}, wrapper: false, label_html: { class: "label" } %>
+      </div>
+    </div>
+
+    <div class="field">
+    	<div class="control">
+      	<%= f.button :submit, class:"button is-primary" %>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<% end %>
+---
+```
+![image](https://i.loli.net/2018/03/31/5abf2013acf89.png)
+
+```
+rails g uploader Shot
+rails g uplooader user_shot
+rails g uploader user_shot
+rails g migration add_user_shot_to_shots
+rake db:migrate
+```
+![image](https://i.loli.net/2018/03/31/5abf22cd1df24.png)
+```
+app/uploaders/shot_uploader.rb
+---
+class ShotUploader < CarrierWave::Uploader::Base
+  # Include RMagick or MiniMagick support:
+  # include CarrierWave::RMagick
+   include CarrierWave::MiniMagick
+
+  # Choose what kind of storage to use for this uploader:
+  storage :file
+  # storage :fog
+
+  # Override the directory where uploaded files will be stored.
+  # This is a sensible default for uploaders that are meant to be mounted:
+  def store_dir
+    "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
+  end
+  ---
+  app/uploaders/user_shot_uploader.rb
+  ---
+  class UserShotUploader < CarrierWave::Uploader::Base
+    # Include RMagick or MiniMagick support:
+    # include CarrierWave::RMagick
+     include CarrierWave::MiniMagick
+
+    # Choose what kind of storage to use for this uploader:
+    storage :file
+    # storage :fog
+
+    # Override the directory where uploaded files will be stored.
+    # This is a sensible default for uploaders that are meant to be mounted:
+    def store_dir
+      "uploads/#{model.class.to_s.underscore}/#{mounted_as}/#{model.id}"
+    end
+
+    # Provide a default URL as a default if there hasn't been a file uploaded:
+    # def default_url(*args)
+    #   # For Rails 3.1+ asset pipeline compatibility:
+    #   # ActionController::Base.helpers.asset_path("fallback/" + [version_name, "default.png"].compact.join('_'))
+    #
+    #   "/images/fallback/" + [version_name, "default.png"].compact.join('_')
+    # end
+
+    # Process files as they are uploaded:
+    # process scale: [200, 300]
+    #
+    # def scale(width, height)
+    #   # do something
+    # end
+
+    # Create different versions of your uploaded files:
+     version :full do
+       process resize_to_fit: [800, 600]
+     end
+
+     version :thumb do
+       process resize_to_fit: [400, 300]
+     end
+
+    # Add a white list of extensions which are allowed to be uploaded.
+    # For images you might use something like this:
+     def extension_whitelist
+       %w(jpg jpeg gif png)
+     end
+
+    # Override the filename of the uploaded files:
+    # Avoid using model.id or version_name here, see uploader/store.rb for details.
+    # def filename
+    #   "something.jpg" if original_filename
+    # end
+  end
+  ---
+  db/migrate/20180331055004_add_user_shot_to_shots.rb
+  ---
+  class AddUserShotToShots < ActiveRecord::Migration[5.1]
+    def change
+      add_column :shots, :user_shot, :string
+    end
+  end
+  ---
+app/models/shot.rb
+---
+class Shot < ApplicationRecord
+  belongs_to :user
+  mount_uploader :user_shot, UserShotUploader
+end
+---
+app/views/shots/_form.html.erb
+---
+<output id="list"></output>
+<div id="drop_zone">Drag your shot here</div>
+<br />
+
+<%= f.input :user_shot, label: false, input_html: { class: "", type: "file" }, wrapper: false, label_html: { class: "file-label" } %>
+---
+```
+![image](https://i.loli.net/2018/03/31/5abf2578b31d2.png)
+```
+app/assets/javascripts/shots.js
+---
+document.addEventListener("turbolinks:load", function() {
+
+	var Shots = {
+		previewShot() {
+			if (window.File && window.FileList && window.FileReader) {
+
+				function handleFileSelect(evt) {
+					evt.stopPropagation();
+					evt.preventDefault();
+
+					let files = evt.target.files || evt.dataTransfer.files;
+					// files is a FileList of File objects. List some properties.
+					for (var i = 0, f; f = files[i]; i++) {
+
+						// Only process image files.
+						if (!f.type.match('image.*')) {
+							continue;
+						}
+						const reader = new FileReader();
+
+						// Closure to capture the file information.
+						reader.onload = (function(theFile) {
+							return function(e) {
+								// Render thumbnail.
+								let span = document.createElement('span');
+								span.innerHTML = ['<img class="thumb" src="', e.target.result,
+									'" title="', escape(theFile.name), '"/>'
+								].join('');
+								document.getElementById('list').insertBefore(span, null);
+							};
+						})(f);
+
+						// Read in the image file as a data URL.
+						reader.readAsDataURL(f);
+					}
+				}
+
+				function handleDragOver(evt) {
+					evt.stopPropagation();
+					evt.preventDefault();
+					evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+				}
+
+				// Setup the dnd listeners.
+				// https://stackoverflow.com/questions/47515232/how-to-set-file-input-value-when-dropping-file-on-page
+				const dropZone = document.getElementById('drop_zone');
+				const target = document.documentElement;
+				const fileInput = document.getElementById('shot_user_shot');
+				const previewImage = document.getElementById('previewImage');
+				const newShotForm = document.getElementById('new_shot');
+
+
+				if (dropZone) {
+					dropZone.addEventListener('dragover', handleDragOver, false);
+					dropZone.addEventListener('drop', handleFileSelect, false);
+
+					// Drop zone classes itself
+					dropZone.addEventListener('dragover', (e) => {
+						dropZone.classList.add('fire');
+					}, false);
+
+					dropZone.addEventListener('dragleave', (e) => {
+						dropZone.classList.remove('fire');
+					}, false);
+
+					dropZone.addEventListener('drop', (e) => {
+						e.preventDefault();
+						dropZone.classList.remove('fire');
+						fileInput.files = e.dataTransfer.files;
+						// if on shot/id/edit hide preview image on drop
+						if (previewImage) {
+							previewImage.style.display = 'none';
+						}
+						// If on shots/new hide dropzone on drop
+						if(newShotForm) {
+							dropZone.style.display = 'none';
+						}
+					}, false);
+
+					// Body specific
+					target.addEventListener('dragover', (e) => {
+						e.preventDefault();
+						dropZone.classList.add('dragging');
+					}, false);
+
+					// removes dragging class to body WHEN NOT dragging
+					target.addEventListener('dragleave', (e) => {
+						dropZone.classList.remove('dragging');
+						dropZone.classList.remove('fire');
+					}, false);
+				}
+			}
+		},
+		shotHover() {
+			$('.shot').hover(function() {
+				$(this).children('.shot-data').toggleClass('visible');
+			});
+		}
+
+	};
+	Shots.previewShot();
+	Shots.shotHover();
+
+
+});
+---
+```
+# 实现突破的拖拽上传功能
+```
+git add .
+git commit -m "add image Drag"
+git push origin shot-view
+```
+![image](https://i.loli.net/2018/03/31/5abf284fc8cc0.png)
+
+```
+app/controllers/shots_controller.rb
+---
+before_action :set_shot, only: [:show, :edit, :update, :destroy]
+before_action :authenticate_user!, only: [:edit, :update, :destroy]
+
+def index
+   @shots = Shot.all.order('created_at DESC')
+end
+
+def new
+  @shot = current_user.shots.build
+end
+
+def create
+@shot = current_user.shots.build(shot_params)
+```
+![image](https://i.loli.net/2018/03/31/5abf2b89b750a.png)
+
+```
+app/views/shots/index.html.erb
+---
+
+
+<h1>Shots</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Description</th>
+      <th>User</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @shots.each do |shot| %>
+      <tr>
+        <td><%= shot.title %></td>
+        <td><%= shot.description %></td>
+        <td><%= shot.user_id %></td>
+        <td><%= link_to 'Show', shot %></td>
+        <td><%= link_to 'Edit', edit_shot_path(shot) %></td>
+        <td><%= link_to 'Destroy', shot, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+---
+<section class="section">
+  <div class="shots">
+    <% @shots.each do |shot| %>
+      <div class="shot-grid-item">
+        <div class="shot-wrapper">
+
+        <%#= link_to shot, class: "shot" do %>
+          <%#= image_tag shot.image.thumb.url unless shot.image.blank? %>
+          <div class="shot-data">
+            <h3 class="shot-title"><%= shot.title %></h3>
+            <div class="shot-description"><%= truncate(shot.description, length: 60) %></div>
+            <div class="shot-time">
+              <%= time_ago_in_words(shot.created_at) %>
+            </div>
+          </div>
+          <%# end %>
+
+           </div>
+        </div>
+     <% end %>
+   </div>
+</section>
+```
+
+
+```
+.shot-wrapper {
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+	border-radius: 2px;
+	padding: 10px;
+	background: white;
+}
+.shots {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	grid-gap: 1rem;
+	@media only screen and (min-width: 1600px) {
+		grid-template-columns: repeat(6, 1fr);
+	}
+	@media only screen and (max-width: 1300px) {
+		grid-template-columns: repeat(4, 1fr);
+	}
+	@media only screen and (max-width: 1100px) {
+		grid-template-columns: repeat(3, 1fr);
+	}
+	@media only screen and (max-width: 800px) {
+		grid-template-columns: 1fr 1fr;
+	}
+	@media only screen and (max-width: 400px) {
+		grid-template-columns: 1fr;
+	}
+
+}
+.shot {
+	position: relative;
+	display: block;
+	color: #333 !important;
+
+	.shot-data {
+		display: none;
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		padding: 10px;
+		background: rgba(white, .9);
+		cursor: pointer;
+		.shot-title {
+			font-weight: bold;
+		}
+		.shot-description {
+			font-size: .9rem;
+		}
+		.shot-time {
+			font-size: .8rem;
+			padding-top: .5rem;
+		}
+	}
+}
+
+.user-data {
+	padding: 1rem 0 0 0;
+}
+
+.user-name {
+	display: inline-block;
+	position: relative;
+	top: -4px;
+	padding-left: 5px;
+}
+
+.user-thumb {
+	display: inline-block;
+	img {
+		border-radius: 50%;
+	}
+}
+
+.by,
+.shot-time {
+	display: inline-block;
+	position: relative;
+	top: -4px;
+}
+
+.shot-analytics {
+	text-align: right;
+	@media only screen and (max-width: 800px) {
+		text-align: right;
+		.level-item {
+			display: inline-block;
+			padding: 0 4px;
+		}
+		.level-left+.level-right {
+			margin: 0;
+			padding: 0;
+		}
+		.level-item:not(:last-child) {
+			margin: 0;
+		}
+	}
+}
+
+.shot-analytics,
+.panel.show-shot-analytics {
+	font-size: .9rem;
+	a,
+	.icon {
+		color: #aaa;
+	}
+	.icon:hover,
+	a:hover {
+		color: darken(#aaa, 25%);
+	}
+}
+
+.panel.show-shot-analytics {
+	a { color: #333; }
+	.icon {
+		padding-right: .5rem;
+	}
+	.likes .vote_count {
+		margin-left: -4px;
+	}
+}
+
+
+.shot-container {
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+	border-radius: 2px;
+	padding: 40px;
+	background: white;
+	@media only screen and (max-width: 800px) {
+		padding: 10px;
+	}
+	.content,
+	.comments {
+		margin-top: 1rem;
+		padding: 20px;
+		@media only screen and (max-width: 800px) {
+			padding: 0;
+		}
+	}
+}
+
+.shot-full {
+	text-align: center;
+}
+---
+```
+![image](https://i.loli.net/2018/03/31/5abf42617186d.png)
+
+```
+app/views/shots/index.html.erb
+---
+<section class="section">
+  <div class="shots">
+    <% @shots.each do |shot| %>
+      <div class="shot-grid-item">
+        <div class="shot-wrapper">
+
+        <%#= link_to shot, class: "shot" do %>
+          <%#= image_tag shot.image.thumb.url unless shot.image.blank? %>
+          <div class="shot-data">
+            <h3 class="shot-title"><%= link_to shot.title, shot %></h3>
+            <div class="shot-description"><%= truncate(shot.description, length: 60) %></div>
+            <div class="shot-time">
+              <%= time_ago_in_words(shot.created_at) %>
+            </div>
+          </div>
+          <%# end %>
+
+          <nav class="level shot-analytics">
+            <div class="level-left"></div>
+            <div class="level-right">
+              <div class="level-item views data">
+                <%= link_to shot do %>
+                  <span class="icon"><i class="fa fa-eye"></i></span>
+                  0<%#= shot.impressionist_count %>
+                <% end %>
+              </div>
+
+              <div class="level-item comments data">
+                <%= link_to shot do %>
+                  <span class="icon"><i class="fa fa-comment"></i></span>
+                   0<%#= shot.comments.count %>
+                <% end %>
+              </div>
+
+              <div class="level-item likes">
+
+                    <%= link_to "" do %>
+                      <span class="icon"><i class="fa fa-heart"></i></span>
+                      <span class="vote_count"></span>
+                      0
+                    <% end %>
+              </div>
+            </div>
+          </nav>
+
+
+          <div class="user-data">
+            <div class="user-thumb">
+              <%= gravatar_image_tag(shot.user.email.gsub('spam', 'mdeering'), alt: shot.user.name, gravatar: { size: 20 }); %>
+            </div>
+
+            <div class="user-name"><%= shot.user.name %></div>
+          </div>
+        </div>
+     </div>
+     <% end %>
+    </div>
+  </section>
+---
+```
+![image](https://i.loli.net/2018/03/31/5abf4fea5b8ef.png)
+```
+app/views/shots/show.html.erb
+---
+<p>
+  <strong>Title:</strong>
+  <%= @shot.title %>
+</p>
+
+<p>
+  <strong>Description:</strong>
+  <%= @shot.description %>
+</p>
+
+
+<%= link_to 'Edit', edit_shot_path(@shot) %> |
+<%= link_to 'Back', shots_path %>
+---
+<div class="section">
+	<div class="container">
+		<h1 class="title is-3"><%= @shot.title %></h1>
+		<div class="columns">
+			<div class="column is-8">
+				<span class="by has-text-grey-light">by</span>
+				<div class="user-thumb">
+					<%= gravatar_image_tag(@shot.user.email.gsub('spam', 'mdeering'), alt: @shot.user.name, gravatar: { size: 20 }); %>
+				</div>
+				<div class="user-name has-text-weight-bold"><%= @shot.user.name %></div>
+				<div class="shot-time"><span class="has-text-grey-light">posted</span><span class="has-text-weight-semibold">
+					<%= verbose_date(@shot.created_at) %>
+				</span></div>
+       </div>
+      </div>
+    </div>
+</div>
+```
+```
+app/helpers/application_helper.rb
+---
+module ApplicationHelper
+	def verbose_date(date)
+		date.strftime('%B %d %Y')
+	end
+end
+---
+```
+![image](https://ws4.sinaimg.cn/large/006tNc79gy1fpw4giqt7dj31kw0cewgs.jpg)
+
+```
+app/views/shots/show.html.erb
+---
+<div class="section">
+	<div class="container">
+		<h1 class="title is-3"><%= @shot.title %></h1>
+		<div class="columns">
+			<div class="column is-8">
+				<span class="by has-text-grey-light">by</span>
+				<div class="user-thumb">
+					<%= gravatar_image_tag(@shot.user.email.gsub('spam', 'mdeering'), alt: @shot.user.name, gravatar: { size: 20 }); %>
+				</div>
+				<div class="user-name has-text-weight-bold"><%= @shot.user.name %></div>
+				<div class="shot-time"><span class="has-text-grey-light">posted</span><span class="has-text-weight-semibold">
+					<%= verbose_date(@shot.created_at) %>
+				</span></div>
+       </div>
+      </div>
+    </div>
+</div>
+
+<div class="columns">
+			<div class="column is-8">
+				<div class="shot-container">
+					<div class="shot-full">
+						 <%#= image_tag @shot.user_shot_url unless @shot.user_shot.blank? %>
+					</div>
+
+					<% if user_signed_in? && (current_user.id == @shot.user_id) %>
+						<div class="buttons has-addons">
+							<%= link_to 'Edit', edit_shot_path(@shot), class: "button" %>
+							<%= link_to 'Delete', shot_path, class: "button", method: :delete, data: { confirm: 'Are you sure you want to delete this shot?'} %>
+						</div>
+					<% end %>
+
+					<div class="content">
+						<%= @shot.description %>
+					</div>
+
+          </div>
+        </div>
+
+
+        <div class="column is-3 is-offset-1">
+  				<div class="nav panel show-shot-analytics">
+  					<div class="panel-block views data">
+  						<span class="icon"><i class="fa fa-eye"></i></span>
+  						0<%#= pluralize(@shot.impressionist_count, 'View') %>
+  					</div>
+  					<div class="panel-block comments data">
+  						<span class="icon"><i class="fa fa-comment"></i></span>
+  						0<%#= pluralize(@shot.comments.count, 'Comment') %>
+  					</div>
+
+  					<div class="panel-block likes data">
+                    <span class="icon"><i class="fa fa-heart has-text-primary"></i></span>
+                  0
+  					</div>
+
+  				</div>
+  			</div>
+      </div>
+---
+```
+![image](https://ws1.sinaimg.cn/large/006tNc79gy1fpw505p291j31kw0hgn14.jpg)
+![image](https://ws2.sinaimg.cn/large/006tNc79gy1fpw50nfflcj31kw0pqtc6.jpg)
