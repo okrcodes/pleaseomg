@@ -21,10 +21,10 @@ gem 'guard-livereload', '~> 2.5', '>= 2.5.2', require: false
 ```
 - 功能 的架构
 ```
-1、基本的 CRUD + Comment + Upvote(博客) + View
-2、导航 Nav + Devise 的使用（twitter）
-3、图片 Image 的使用
-4、装卸 SCSS 的使用
+1、博客（blog）：基本的 CRUD（增删改查） + Comment（评论） + Upvote(点赞) + View（预览）
+2、推特（twitter）：导航 Nav（导航） + Devise 的使用
+3、达波（dribble）：图片 Image 的使用
+4、装修 SCSS 的使用
 ```
 - 云端 的部署
 ```
