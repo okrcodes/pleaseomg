@@ -46,4 +46,4 @@ git remote add origin https://github.com/shenzhoudance/dribbble_clone.git
 git push -u origin master
 ```
 
-![image](Let's Build: A Dribbble Clone With Ruby On Rails)
+![image](https://i.loli.net/2018/03/31/5abef9ddcd9ad.png)
