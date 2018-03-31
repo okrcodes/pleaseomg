@@ -33,6 +33,7 @@ gem 'guard-livereload', '~> 2.5', '>= 2.5.2', require: false
 1、heroku 的部署
 2、aliyun 的部署
 ```
+https://teratail.com
 
 ```
 cd workspace
@@ -891,3 +892,405 @@ git commit -m "add image Drag"
 git push origin shot-view
 ```
 ![image](https://i.loli.net/2018/03/31/5abf284fc8cc0.png)
+
+```
+app/controllers/shots_controller.rb
+---
+before_action :set_shot, only: [:show, :edit, :update, :destroy]
+before_action :authenticate_user!, only: [:edit, :update, :destroy]
+
+def index
+   @shots = Shot.all.order('created_at DESC')
+end
+
+def new
+  @shot = current_user.shots.build
+end
+
+def create
+@shot = current_user.shots.build(shot_params)
+```
+![image](https://i.loli.net/2018/03/31/5abf2b89b750a.png)
+
+```
+app/views/shots/index.html.erb
+---
+
+
+<h1>Shots</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Description</th>
+      <th>User</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @shots.each do |shot| %>
+      <tr>
+        <td><%= shot.title %></td>
+        <td><%= shot.description %></td>
+        <td><%= shot.user_id %></td>
+        <td><%= link_to 'Show', shot %></td>
+        <td><%= link_to 'Edit', edit_shot_path(shot) %></td>
+        <td><%= link_to 'Destroy', shot, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+---
+<section class="section">
+  <div class="shots">
+    <% @shots.each do |shot| %>
+      <div class="shot-grid-item">
+        <div class="shot-wrapper">
+
+        <%#= link_to shot, class: "shot" do %>
+          <%#= image_tag shot.image.thumb.url unless shot.image.blank? %>
+          <div class="shot-data">
+            <h3 class="shot-title"><%= shot.title %></h3>
+            <div class="shot-description"><%= truncate(shot.description, length: 60) %></div>
+            <div class="shot-time">
+              <%= time_ago_in_words(shot.created_at) %>
+            </div>
+          </div>
+          <%# end %>
+
+           </div>
+        </div>
+     <% end %>
+   </div>
+</section>
+```
+
+
+```
+.shot-wrapper {
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+	border-radius: 2px;
+	padding: 10px;
+	background: white;
+}
+.shots {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	grid-gap: 1rem;
+	@media only screen and (min-width: 1600px) {
+		grid-template-columns: repeat(6, 1fr);
+	}
+	@media only screen and (max-width: 1300px) {
+		grid-template-columns: repeat(4, 1fr);
+	}
+	@media only screen and (max-width: 1100px) {
+		grid-template-columns: repeat(3, 1fr);
+	}
+	@media only screen and (max-width: 800px) {
+		grid-template-columns: 1fr 1fr;
+	}
+	@media only screen and (max-width: 400px) {
+		grid-template-columns: 1fr;
+	}
+
+}
+.shot {
+	position: relative;
+	display: block;
+	color: #333 !important;
+
+	.shot-data {
+		display: none;
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		padding: 10px;
+		background: rgba(white, .9);
+		cursor: pointer;
+		.shot-title {
+			font-weight: bold;
+		}
+		.shot-description {
+			font-size: .9rem;
+		}
+		.shot-time {
+			font-size: .8rem;
+			padding-top: .5rem;
+		}
+	}
+}
+
+.user-data {
+	padding: 1rem 0 0 0;
+}
+
+.user-name {
+	display: inline-block;
+	position: relative;
+	top: -4px;
+	padding-left: 5px;
+}
+
+.user-thumb {
+	display: inline-block;
+	img {
+		border-radius: 50%;
+	}
+}
+
+.by,
+.shot-time {
+	display: inline-block;
+	position: relative;
+	top: -4px;
+}
+
+.shot-analytics {
+	text-align: right;
+	@media only screen and (max-width: 800px) {
+		text-align: right;
+		.level-item {
+			display: inline-block;
+			padding: 0 4px;
+		}
+		.level-left+.level-right {
+			margin: 0;
+			padding: 0;
+		}
+		.level-item:not(:last-child) {
+			margin: 0;
+		}
+	}
+}
+
+.shot-analytics,
+.panel.show-shot-analytics {
+	font-size: .9rem;
+	a,
+	.icon {
+		color: #aaa;
+	}
+	.icon:hover,
+	a:hover {
+		color: darken(#aaa, 25%);
+	}
+}
+
+.panel.show-shot-analytics {
+	a { color: #333; }
+	.icon {
+		padding-right: .5rem;
+	}
+	.likes .vote_count {
+		margin-left: -4px;
+	}
+}
+
+
+.shot-container {
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+	border-radius: 2px;
+	padding: 40px;
+	background: white;
+	@media only screen and (max-width: 800px) {
+		padding: 10px;
+	}
+	.content,
+	.comments {
+		margin-top: 1rem;
+		padding: 20px;
+		@media only screen and (max-width: 800px) {
+			padding: 0;
+		}
+	}
+}
+
+.shot-full {
+	text-align: center;
+}
+---
+```
+![image](https://i.loli.net/2018/03/31/5abf42617186d.png)
+
+```
+app/views/shots/index.html.erb
+---
+<section class="section">
+  <div class="shots">
+    <% @shots.each do |shot| %>
+      <div class="shot-grid-item">
+        <div class="shot-wrapper">
+
+        <%#= link_to shot, class: "shot" do %>
+          <%#= image_tag shot.image.thumb.url unless shot.image.blank? %>
+          <div class="shot-data">
+            <h3 class="shot-title"><%= link_to shot.title, shot %></h3>
+            <div class="shot-description"><%= truncate(shot.description, length: 60) %></div>
+            <div class="shot-time">
+              <%= time_ago_in_words(shot.created_at) %>
+            </div>
+          </div>
+          <%# end %>
+
+          <nav class="level shot-analytics">
+            <div class="level-left"></div>
+            <div class="level-right">
+              <div class="level-item views data">
+                <%= link_to shot do %>
+                  <span class="icon"><i class="fa fa-eye"></i></span>
+                  0<%#= shot.impressionist_count %>
+                <% end %>
+              </div>
+
+              <div class="level-item comments data">
+                <%= link_to shot do %>
+                  <span class="icon"><i class="fa fa-comment"></i></span>
+                   0<%#= shot.comments.count %>
+                <% end %>
+              </div>
+
+              <div class="level-item likes">
+
+                    <%= link_to "" do %>
+                      <span class="icon"><i class="fa fa-heart"></i></span>
+                      <span class="vote_count"></span>
+                      0
+                    <% end %>
+              </div>
+            </div>
+          </nav>
+
+
+          <div class="user-data">
+            <div class="user-thumb">
+              <%= gravatar_image_tag(shot.user.email.gsub('spam', 'mdeering'), alt: shot.user.name, gravatar: { size: 20 }); %>
+            </div>
+
+            <div class="user-name"><%= shot.user.name %></div>
+          </div>
+        </div>
+     </div>
+     <% end %>
+    </div>
+  </section>
+---
+```
+![image](https://i.loli.net/2018/03/31/5abf4fea5b8ef.png)
+```
+app/views/shots/show.html.erb
+---
+<p>
+  <strong>Title:</strong>
+  <%= @shot.title %>
+</p>
+
+<p>
+  <strong>Description:</strong>
+  <%= @shot.description %>
+</p>
+
+
+<%= link_to 'Edit', edit_shot_path(@shot) %> |
+<%= link_to 'Back', shots_path %>
+---
+<div class="section">
+	<div class="container">
+		<h1 class="title is-3"><%= @shot.title %></h1>
+		<div class="columns">
+			<div class="column is-8">
+				<span class="by has-text-grey-light">by</span>
+				<div class="user-thumb">
+					<%= gravatar_image_tag(@shot.user.email.gsub('spam', 'mdeering'), alt: @shot.user.name, gravatar: { size: 20 }); %>
+				</div>
+				<div class="user-name has-text-weight-bold"><%= @shot.user.name %></div>
+				<div class="shot-time"><span class="has-text-grey-light">posted</span><span class="has-text-weight-semibold">
+					<%= verbose_date(@shot.created_at) %>
+				</span></div>
+       </div>
+      </div>
+    </div>
+</div>
+```
+```
+app/helpers/application_helper.rb
+---
+module ApplicationHelper
+	def verbose_date(date)
+		date.strftime('%B %d %Y')
+	end
+end
+---
+```
+![image](https://ws4.sinaimg.cn/large/006tNc79gy1fpw4giqt7dj31kw0cewgs.jpg)
+
+```
+app/views/shots/show.html.erb
+---
+<div class="section">
+	<div class="container">
+		<h1 class="title is-3"><%= @shot.title %></h1>
+		<div class="columns">
+			<div class="column is-8">
+				<span class="by has-text-grey-light">by</span>
+				<div class="user-thumb">
+					<%= gravatar_image_tag(@shot.user.email.gsub('spam', 'mdeering'), alt: @shot.user.name, gravatar: { size: 20 }); %>
+				</div>
+				<div class="user-name has-text-weight-bold"><%= @shot.user.name %></div>
+				<div class="shot-time"><span class="has-text-grey-light">posted</span><span class="has-text-weight-semibold">
+					<%= verbose_date(@shot.created_at) %>
+				</span></div>
+       </div>
+      </div>
+    </div>
+</div>
+
+<div class="columns">
+			<div class="column is-8">
+				<div class="shot-container">
+					<div class="shot-full">
+						 <%#= image_tag @shot.user_shot_url unless @shot.user_shot.blank? %>
+					</div>
+
+					<% if user_signed_in? && (current_user.id == @shot.user_id) %>
+						<div class="buttons has-addons">
+							<%= link_to 'Edit', edit_shot_path(@shot), class: "button" %>
+							<%= link_to 'Delete', shot_path, class: "button", method: :delete, data: { confirm: 'Are you sure you want to delete this shot?'} %>
+						</div>
+					<% end %>
+
+					<div class="content">
+						<%= @shot.description %>
+					</div>
+
+          </div>
+        </div>
+
+
+        <div class="column is-3 is-offset-1">
+  				<div class="nav panel show-shot-analytics">
+  					<div class="panel-block views data">
+  						<span class="icon"><i class="fa fa-eye"></i></span>
+  						0<%#= pluralize(@shot.impressionist_count, 'View') %>
+  					</div>
+  					<div class="panel-block comments data">
+  						<span class="icon"><i class="fa fa-comment"></i></span>
+  						0<%#= pluralize(@shot.comments.count, 'Comment') %>
+  					</div>
+
+  					<div class="panel-block likes data">
+                    <span class="icon"><i class="fa fa-heart has-text-primary"></i></span>
+                  0
+  					</div>
+
+  				</div>
+  			</div>
+      </div>
+---
+```
+![image](https://ws1.sinaimg.cn/large/006tNc79gy1fpw505p291j31kw0hgn14.jpg)
+![image](https://ws2.sinaimg.cn/large/006tNc79gy1fpw50nfflcj31kw0pqtc6.jpg)
