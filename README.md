@@ -1621,3 +1621,115 @@ git add .
 git commit -m "add impression views eyes"
 git push origin impression1
 ```
+
+```
+git checkout -b acts_as_votable
+rails generate acts_as_votable:migration
+rake db:migrate
+---
+app/models/shot.rb
+---
+class Shot < ApplicationRecord
+  belongs_to :user
+  has_many :comments, dependent: :destroy
+  mount_uploader :user_shot, UserShotUploader
+  is_impressionable
+  acts_as_votable
+end
+---
+app/models/user.rb
+---
+class User < ApplicationRecord
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :trackable, :validatable
+  has_many :shots, dependent: :destroy
+  has_many :comments, dependent: :destroy
+  acts_as_voter
+end
+---
+
+app/controllers/shots_controller.rb
+---
+before_action :set_shot, only: [:show, :edit, :update, :destroy, :like, :unlike]
+before_action :authenticate_user!, only: [:edit, :update, :destroy, :like, :unlike]
+impressionist actions: [:show], unique: [:impressionable_type, :impressionable_id, :session_hash]
+
+def like
+  @shot.liked_by current_user
+  respond_to do |format|
+    format.html { redirect_back fallback_location: root_path }
+    format.json { render layout:false }
+  end
+end
+
+def unlike
+  @shot.unliked_by current_user
+  respond_to do |format|
+    format.html { redirect_back fallback_location: root_path }
+    format.json { render layout:false }
+  end
+end
+---
+app/views/shots/index.html.erb
+---
+<div class="level-item likes">
+   <% if user_signed_in? %>
+
+     <% if current_user.liked? shot %>
+       <%= link_to unlike_shot_path(shot), method: :put, class: "unlike_shot" do %>
+         <span class="icon"><i class="fa fa-heart has-text-primary"></i></span>
+         <span class="vote_count"><%= shot.get_likes.size %></span>
+       <% end %>
+     <% else %>
+       <%= link_to like_shot_path(shot), method: :put, class: "like_shot" do %>
+         <span class="icon"><i class="fa fa-heart"></i></span>
+         <span class="vote_count"><%= shot.get_likes.size %></span>
+       <% end %>
+     <% end %>
+   <% else %>
+       <%= link_to like_shot_path(shot), method: :put, class: "like_shot" do %>
+         <span class="icon"><i class="fa fa-heart"></i></span>
+         <span class="vote_count"><%= shot.get_likes.size %></span>
+       <% end %>
+    <% end %>
+---
+config/routes.rb
+---
+Rails.application.routes.draw do
+  resources :shots do
+    resources :comments
+    member do
+  		put 'like', to: "shots#like"
+  		put 'unlike', to: "shots#unlike"
+  	end
+end
+
+  devise_for :users, controllers: { registrations: 'registrations' }
+  root 'shots#index'
+end
+```
+![image](https://ws2.sinaimg.cn/large/006tKfTcgy1fpx39kti85j31kw0fx77b.jpg)
+```
+app/views/shots/show.html.erb
+---
+<div class="panel-block likes data">
+  <% if user_signed_in? %>
+    <% if current_user.liked? @shot %>
+      <%= link_to unlike_shot_path(@shot), method: :put, class: "unlike_shot" do %>
+        <span class="icon"><i class="fa fa-heart has-text-primary"></i></span>
+        <span class="vote_count"><%= pluralize(@shot.get_likes.size, 'Like') %></span>
+      <% end %>
+    <% else %>
+      <%= link_to like_shot_path(@shot), method: :put, class: "like_shot" do %>
+        <span class="icon"><i class="fa fa-heart"></i></span>
+        <span class="vote_count"><%= pluralize(@shot.get_likes.size, 'Like') %></span>
+      <% end %>
+    <% end %>
+  <% else %>
+      <%= link_to like_shot_path(@shot), method: :put, class: "like_shot" do %>
+        <span class="icon"><i class="fa fa-heart"></i></span>
+        <span class="vote_count"><%= pluralize(@shot.get_likes.size, 'Like') %></span>
+      <% end %>
+  <% end %>
+```
+![image](https://ws4.sinaimg.cn/large/006tKfTcgy1fpx3cu60svj31kw0k7acz.jpg)
