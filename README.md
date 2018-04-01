@@ -1,5 +1,19 @@
 # Let's Build: A Dribbble Clone With Ruby On Rails
 
+#最后表现效果
+
+# 最后的表现效果
+![image](https://ws1.sinaimg.cn/large/006tKfTcgy1fpx3wh2o6gj31kw0ltae8.jpg)
+
+# 出现的两个问题
+![image](https://ws3.sinaimg.cn/large/006tKfTcgy1fpx3wcauxrj31kw0jrwm3.jpg)
+![image](https://ws2.sinaimg.cn/large/006tKfTcgy1fpx3w77xb6j31kw0hz12m.jpg)
+
+- 第一个问题是：图片的引入部分错误；
+- 第二个问题是：评论的用户部分错误；
+
+后续需要好好思考这个地方；在处理 js 的代码的时候，
+明显感觉掌握的力度不够，还需要进一步的强化才好；
 
 对于 Dribbble 的案例的思考：
 
@@ -1733,3 +1747,46 @@ app/views/shots/show.html.erb
   <% end %>
 ```
 ![image](https://ws4.sinaimg.cn/large/006tKfTcgy1fpx3cu60svj31kw0k7acz.jpg)
+
+```
+git add .
+git commit -m "add acts_as_votable"
+git push origin acts_as_votable
+```
+![image](https://ws3.sinaimg.cn/large/006tKfTcgy1fpx3hn0zuyj31ei0c4tcd.jpg)
+
+
+```
+git checkout -b hero
+app/views/shots/_hero.html.erb
+---
+<% if !user_signed_in? %>
+	<section class="hero is-dark">
+		<div class="hero-body">
+			<div class="container has-text-centered">
+				<h1 class="title is-size-5">
+					What are you working on? <span class="has-text-grey-light">Dribbble is where designers get inspired and hired.</span>
+				</h1>
+				<div class="content">
+					<%= link_to "Login", new_user_session_path, class: "button is-primary" %>
+				</div>
+			</div>
+		</div>
+	</section>
+<% end %>
+---
+
+app/views/shots/index.html.erb
+---
+<%= render 'hero' %>
+---
+app/assets/javascripts/application.js
+---
+//= require rails-ujs
+//= require turbolinks
+//= require jquery
+//= require jquery_ujs
+//= require_tree .
+```
+# 最后的表现效果
+![image](https://ws1.sinaimg.cn/large/006tKfTcgy1fpx3wh2o6gj31kw0ltae8.jpg)

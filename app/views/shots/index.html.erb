@@ -1,11 +1,13 @@
+<%= render 'hero' %>
+
 <section class="section">
   <div class="shots">
     <% @shots.each do |shot| %>
       <div class="shot-grid-item">
         <div class="shot-wrapper">
 
-        <%#= link_to shot, class: "shot" do %>
-           <%#= image_tag @shot.user_shot_url unless @shot.user_shot.blank? %>
+        <%= link_to shot, class: "shot" do %>
+           <%= image_tag @shot.user_shot_url unless @shot.user_shot.blank? %>
           <div class="shot-data">
             <h3 class="shot-title"><%= link_to shot.title, shot %></h3>
             <div class="shot-description"><%= truncate(shot.description, length: 60) %></div>
@@ -13,7 +15,7 @@
               <%= time_ago_in_words(shot.created_at) %>
             </div>
           </div>
-          <%# end %>
+          <% end %>
 
           <nav class="level shot-analytics">
             <div class="level-left"></div>
@@ -31,6 +33,7 @@
                    <%= shot.comments.count %>
                 <% end %>
               </div>
+
 
               <div class="level-item likes">
                  <% if user_signed_in? %>
