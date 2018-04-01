@@ -1441,8 +1441,183 @@ app/views/shots/show.html.erb
 ```
 ![image](https://ws4.sinaimg.cn/large/006tNc79gy1fpwyg3ict1j31kw0t813b.jpg)
 
-# 变现效果
+# 最后效果
 ![image](https://ws3.sinaimg.cn/large/006tNc79gy1fpwyj2fqsvj31kw0ritc3.jpg)
 ![image](https://ws4.sinaimg.cn/large/006tNc79gy1fpwyi0nosdj31kw0jp77z.jpg)
 ![image](https://ws1.sinaimg.cn/large/006tNc79gy1fpwyhvdtwrj31kw0lqn0c.jpg)
 ![image](https://ws2.sinaimg.cn/large/006tNc79gy1fpwyhq3d36j31kw0nraca.jpg)
+
+```
+git checkout -b impression1
+rails g impressionist
+db/migrate/20180401041606_create_impressions_table.rb
+---
+class CreateImpressionsTable < ActiveRecord::Migration[5.1]
+---
+```
+![image](https://ws3.sinaimg.cn/large/006tKfTcgy1fpx1c8qlybj31kw0irdm8.jpg)
+
+```
+app/models/shot.rb
+---
+class Shot < ApplicationRecord
+  belongs_to :user
+  has_many :comments, dependent: :destroy
+  mount_uploader :user_shot, UserShotUploader
+  is_impressionable
+end
+---
+app/controllers/shots_controller.rb
+---
+before_action :set_shot, only: [:show, :edit, :update, :destroy]
+before_action :authenticate_user!, only: [:edit, :update, :destroy,]
+impressionist actions: [:show], unique: [:impressionable_type, :impressionable_id, :session_hash]
+
+app/views/shots/index.html.erb
+---
+<section class="section">
+  <div class="shots">
+    <% @shots.each do |shot| %>
+      <div class="shot-grid-item">
+        <div class="shot-wrapper">
+
+        <%#= link_to shot, class: "shot" do %>
+           <%#= image_tag @shot.user_shot_url unless @shot.user_shot.blank? %>
+          <div class="shot-data">
+            <h3 class="shot-title"><%= link_to shot.title, shot %></h3>
+            <div class="shot-description"><%= truncate(shot.description, length: 60) %></div>
+            <div class="shot-time">
+              <%= time_ago_in_words(shot.created_at) %>
+            </div>
+          </div>
+          <%# end %>
+
+          <nav class="level shot-analytics">
+            <div class="level-left"></div>
+            <div class="level-right">
+              <div class="level-item views data">
+                <%= link_to shot do %>
+                  <span class="icon"><i class="fa fa-eye"></i></span>
+                  <%= shot.impressionist_count %>
+                <% end %>
+              </div>
+
+              <div class="level-item comments data">
+                <%= link_to shot do %>
+                  <span class="icon"><i class="fa fa-comment"></i></span>
+                   <%= shot.comments.count %>
+                <% end %>
+              </div>
+
+              <div class="level-item likes">
+
+                    <%= link_to "" do %>
+                      <span class="icon"><i class="fa fa-heart"></i></span>
+                      <span class="vote_count"></span>
+                      0
+                    <% end %>
+              </div>
+            </div>
+          </nav>
+
+
+          <div class="user-data">
+            <div class="user-thumb">
+              <%= gravatar_image_tag(shot.user.email.gsub('spam', 'mdeering'), alt: shot.user.name, gravatar: { size: 20 }); %>
+            </div>
+
+            <div class="user-name"><%= shot.user.name %></div>
+          </div>
+        </div>
+     </div>
+     <% end %>
+    </div>
+  </section>
+---
+app/views/shots/show.html.erb
+---
+<div class="section">
+	<div class="container">
+		<h1 class="title is-3"><%= @shot.title %></h1>
+		<div class="columns">
+			<div class="column is-8">
+				<span class="by has-text-grey-light">by</span>
+				<div class="user-thumb">
+					<%= gravatar_image_tag(@shot.user.email.gsub('spam', 'mdeering'), alt: @shot.user.name, gravatar: { size: 20 }); %>
+				</div>
+				<div class="user-name has-text-weight-bold"><%= @shot.user.name %></div>
+				<div class="shot-time"><span class="has-text-grey-light">posted</span><span class="has-text-weight-semibold">
+					<%= verbose_date(@shot.created_at) %>
+				</span></div>
+       </div>
+      </div>
+    </div>
+</div>
+
+<div class="columns">
+			<div class="column is-8">
+				<div class="shot-container">
+					<div class="shot-full">
+						 <%= image_tag @shot.user_shot_url unless @shot.user_shot.blank? %>
+					</div>
+
+					<% if user_signed_in? && (current_user.id == @shot.user_id) %>
+						<div class="buttons has-addons">
+							<%= link_to 'Edit', edit_shot_path(@shot), class: "button" %>
+							<%= link_to 'Delete', shot_path, class: "button", method: :delete, data: { confirm: 'Are you sure you want to delete this shot?'} %>
+						</div>
+					<% end %>
+
+					<div class="content">
+						<%= @shot.description %>
+					</div>
+
+					<section class="comments">
+				    <h2 class="subtitle is-5"><%= pluralize(@shot.comments.count, 'Comment') %></h2>
+					  <%= render @shot.comments %>
+				    <hr />
+				    <% if user_signed_in? %>
+					<div class="comment-form">
+						<h3 class="subtitle is-3">Leave a reply</h3>
+						<%= render 'comments/form' %>
+					</div>
+				<% else %>
+					<div class="content"><%= link_to 'Sign in', new_user_session_path %> to leave a comment.</div>
+				<% end %>
+       </section>
+
+          </div>
+        </div>
+
+
+        <div class="column is-3 is-offset-1">
+  				<div class="nav panel show-shot-analytics">
+  					<div class="panel-block views data">
+  						<span class="icon"><i class="fa fa-eye"></i></span>
+  						<%= pluralize(@shot.impressionist_count, 'View') %>
+  					</div>
+  					<div class="panel-block comments data">
+  						<span class="icon"><i class="fa fa-comment"></i></span>
+  						<%= pluralize(@shot.comments.count, 'Comment') %>
+  					</div>
+
+  					<div class="panel-block likes data">
+                    <span class="icon"><i class="fa fa-heart has-text-primary"></i></span>
+                  0
+  					</div>
+
+  				</div>
+  			</div>
+      </div>
+
+---
+```
+![image](https://ws2.sinaimg.cn/large/006tKfTcgy1fpx21sllivj31kw0eadj2.jpg)
+![image](https://ws3.sinaimg.cn/large/006tKfTcgy1fpx21lcq7oj31kw0p0jul.jpg)
+
+```
+git status
+git add .
+git commit -m "add impression views eyes"
+git push origin impression1
+```

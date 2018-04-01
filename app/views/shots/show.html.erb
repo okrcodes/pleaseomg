@@ -56,11 +56,11 @@
   				<div class="nav panel show-shot-analytics">
   					<div class="panel-block views data">
   						<span class="icon"><i class="fa fa-eye"></i></span>
-  						0<%#= pluralize(@shot.impressionist_count, 'View') %>
+  						<%= pluralize(@shot.impressionist_count, 'View') %>
   					</div>
   					<div class="panel-block comments data">
   						<span class="icon"><i class="fa fa-comment"></i></span>
-  						0<%#= pluralize(@shot.comments.count, 'Comment') %>
+  						<%= pluralize(@shot.comments.count, 'Comment') %>
   					</div>
 
   					<div class="panel-block likes data">
