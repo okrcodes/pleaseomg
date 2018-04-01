@@ -1,7 +1,33 @@
 # Let's Build: A Dribbble Clone With Ruby On Rails
 
 
+对于 Dribbble 的案例的思考：
+
+针对于视频的教材来看，逻辑体系相对来说比较的混乱，容易出现代码的错误。
+
+所以我们在完成这个案例的教学练习的时候，应该从这个方面来完成案例的增量的开发；
+
+- 博客功能的开发（包括：增删改查的功能 + 评论 的功能 + 投票）
+```
+gem "bulma-rails", "~> 0.6.1"
+gem 'simple_form', '~> 3.5'
+gem 'acts_as_votable', '~> 0.11.1'
+```
+- 用户功能的开发（包括：导航条的制作 + 用户页面的美化
+```
+gem 'devise', '~> 4.3'
+gem 'gravatar_image_tag'
+```
+- 图片功能的开发（包括：图片的上传和引入）
+```
+gem 'carrierwave', '~> 1.2', '>= 1.2.1'
+gem "mini_magick"
+```
+- 项目云端的部署（包括：heroku 部署 和 aliyun 部署）
+---
+
 ## 主要完成的任务的实现：
+
 - gem 的使用
 
 ```
@@ -1294,3 +1320,129 @@ app/views/shots/show.html.erb
 ```
 ![image](https://ws1.sinaimg.cn/large/006tNc79gy1fpw505p291j31kw0hgn14.jpg)
 ![image](https://ws2.sinaimg.cn/large/006tNc79gy1fpw50nfflcj31kw0pqtc6.jpg)
+
+```
+git checkout -b comment
+rails g controller comments
+---
+config/routes.rb
+---
+Rails.application.routes.draw do
+  resources :shots do
+    resources :comments
+  end
+  devise_for :users, controllers: { registrations: 'registrations' }
+  root 'shots#index'
+end
+---
+rails g model Comment name:string response:text
+rake db:migrate
+rails g migrate AddShotIdToComments
+db/migrate/20180401021635_add_shot_id_to_comments.rb
+---
+class AddShotIdToComments < ActiveRecord::Migration[5.1]
+  def change
+  	add_column :comments, :shot_id, :integer
+  end
+end
+---
+rake db:migrate
+---
+app/models/comment.rb
+---
+class Comment < ApplicationRecord
+	belongs_to :shot
+	belongs_to :user
+end
+---
+app/models/user.rb
+---
+class User < ApplicationRecord
+  devise :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :trackable, :validatable
+
+  has_many :shots, dependent: :destroy
+  has_many :comments, dependent: :destroy
+end
+---
+app/models/shot.rb
+---
+class Shot < ApplicationRecord
+  belongs_to :user
+  has_many :comments, dependent: :destroy
+  mount_uploader :user_shot, UserShotUploader
+end
+---
+
+app/controllers/comments_controller.rb
+---
+class CommentsController < ApplicationController
+	before_action :authenticate_user!, only: [:create, :destroy]
+
+  def create
+  	@shot = Shot.find(params[:shot_id]) # finds the shot with the associated shot_id
+  	@comment = @shot.comments.create(comment_params) # creates the comment on the shot passing in params
+  	@comment.user_id = current_user.id if current_user # assigns logged in user's ID to comment
+  	@comment.save!
+
+  	redirect_to shot_path(@shot)
+
+  end
+
+  def destroy
+  	@shot = Shot.find(params[:shot_id])
+  	@comment = @shot.comments.find(params[:id])
+  	@comment.destroy
+  	redirect_to shot_path(@shot)
+  end
+
+  private
+
+  def comment_params
+  	params.require(:comment).permit(:name, :response)
+  end
+end
+---
+app/views/comments/_form.html.erb
+---
+<%= simple_form_for([@shot, @shot.comments.build]) do |f| %>
+
+	<div class="field">
+		<div class="control">
+			<%= f.input :name, input_html: { class: 'input'}, wrapper: false, label_html: { class: 'label' } %>
+		</div>
+	</div>
+
+	<div class="field">
+		<div class="control">
+			<%= f.input :response, input_html: { class: 'textarea' }, wrapper: false, label_html: { class: 'label' } %>
+		</div>
+	</div>
+
+	<%= f.button :submit, 'Leave a reply', class: 'button is-primary' %>
+<% end %>
+---
+app/views/shots/show.html.erb
+---
+<section class="comments">
+  <h2 class="subtitle is-5"><%= pluralize(@shot.comments.count, 'Comment') %></h2>
+  <%= render @shot.comments %>
+  <hr />
+  <% if user_signed_in? %>
+<div class="comment-form">
+  <h3 class="subtitle is-3">Leave a reply</h3>
+  <%= render 'comments/form' %>
+</div>
+<% else %>
+<div class="content"><%= link_to 'Sign in', new_user_session_path %> to leave a comment.</div>
+<% end %>
+</section>
+---
+```
+![image](https://ws4.sinaimg.cn/large/006tNc79gy1fpwyg3ict1j31kw0t813b.jpg)
+
+# 变现效果
+![image](https://ws3.sinaimg.cn/large/006tNc79gy1fpwyj2fqsvj31kw0ritc3.jpg)
+![image](https://ws4.sinaimg.cn/large/006tNc79gy1fpwyi0nosdj31kw0jp77z.jpg)
+![image](https://ws1.sinaimg.cn/large/006tNc79gy1fpwyhvdtwrj31kw0lqn0c.jpg)
+![image](https://ws2.sinaimg.cn/large/006tNc79gy1fpwyhq3d36j31kw0nraca.jpg)

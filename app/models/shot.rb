@@ -1,4 +1,5 @@
 class Shot < ApplicationRecord
   belongs_to :user
-  mount_uploader :image_shot, UserShotUploader
+  has_many :comments, dependent: :destroy
+  mount_uploader :user_shot, UserShotUploader
 end
