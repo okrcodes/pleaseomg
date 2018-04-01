@@ -5,7 +5,7 @@
         <div class="shot-wrapper">
 
         <%#= link_to shot, class: "shot" do %>
-          <%#= image_tag shot.image.thumb.url unless shot.image.blank? %>
+           <%#= image_tag @shot.user_shot_url unless @shot.user_shot.blank? %>
           <div class="shot-data">
             <h3 class="shot-title"><%= link_to shot.title, shot %></h3>
             <div class="shot-description"><%= truncate(shot.description, length: 60) %></div>
